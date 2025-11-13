@@ -59,7 +59,7 @@ services:
 
 ## Using the app
 
-0. Go to MY_IP:8501/ - replace with the IP of your machine.
+0. Go to http://MY_IP:8501/ - replace with the IP of your machine.
 1. Prepare a CSV of participants with headers `name,email`.
 2. Optionally upload:
    - Last matches CSV: `giver_email,receiver_email`
