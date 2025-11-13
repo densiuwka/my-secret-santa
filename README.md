@@ -12,20 +12,6 @@ A simple Streamlit web app to generate Secret Santa matches with constraints and
 - Customizable email subject/body templates
 - Download matches as CSV (and save for next year)
 
-## Project structure
-
-- `secret_santa.py` — the app
-- `requirements.txt` — Python dependencies
-- `Dockerfile` — container image for the app
-- `docker-compose.yml` — optional dev-friendly runner
-- `samples/`
-  - `participants_sample.csv`
-  - `last_matches_sample.csv`
-  - `forbidden_pairs_sample.csv`
-- `README.md` — this file
-- `LICENSE` — MIT license (edit author/year)
-- `.gitignore`, `.dockerignore`, `.gitattributes`
-
 ## Prerequisites
 
 - Python 3.9+ (for local runs), or
