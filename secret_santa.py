@@ -5,6 +5,7 @@ import random
 import smtplib
 import ssl
 from email.message import EmailMessage
+from email.utils import parseaddr
 from typing import Dict, List, Tuple, Optional, Set
 
 st.set_page_config(page_title="Secret Santa Matcher", page_icon="🎁", layout="centered")
@@ -13,12 +14,16 @@ st.set_page_config(page_title="Secret Santa Matcher", page_icon="🎁", layout="
 def read_participants(file) -> List[Dict[str, str]]:
     content = file.read().decode("utf-8", errors="ignore")
     reader = csv.DictReader(io.StringIO(content))
+    # normalize header names so we can access row["name"] reliably regardless of case/spacing
+    if reader.fieldnames:
+        reader.fieldnames = [(f or "").strip().lower() for f in reader.fieldnames]
     required = {"name", "email"}
     if not required.issubset({(f or "").strip().lower() for f in reader.fieldnames or []}):
         raise ValueError("Participants CSV must have headers: name,email")
     participants = []
     seen_emails = set()
     for row in reader:
+        # row keys are normalized to lower-case above
         name = (row.get("name") or "").strip()
         email = (row.get("email") or "").strip().lower()
         if not name or not email:
@@ -34,6 +39,8 @@ def read_participants(file) -> List[Dict[str, str]]:
 def read_previous_matches(file) -> Dict[str, str]:
     content = file.read().decode("utf-8", errors="ignore")
     reader = csv.DictReader(io.StringIO(content))
+    if reader.fieldnames:
+        reader.fieldnames = [(f or "").strip().lower() for f in reader.fieldnames]
     required = {"giver_email", "receiver_email"}
     if not required.issubset({(f or "").strip().lower() for f in reader.fieldnames or []}):
         raise ValueError("Previous matches CSV must have headers: giver_email,receiver_email")
@@ -48,6 +55,8 @@ def read_previous_matches(file) -> Dict[str, str]:
 def read_forbidden_pairs(file) -> Dict[str, Set[str]]:
     content = file.read().decode("utf-8", errors="ignore")
     reader = csv.DictReader(io.StringIO(content))
+    if reader.fieldnames:
+        reader.fieldnames = [(f or "").strip().lower() for f in reader.fieldnames]
     required = {"giver_email", "receiver_email"}
     if not required.issubset({(f or "").strip().lower() for f in reader.fieldnames or []}):
         raise ValueError("Forbidden pairs CSV must have headers: giver_email,receiver_email")
@@ -121,17 +130,28 @@ def make_matches(participants: List[Dict[str, str]], prev_map: Dict[str, str], f
 
 def build_message(subject_tmpl: str, body_tmpl: str, giver, receiver, organizer_email: str) -> EmailMessage:
     msg = EmailMessage()
-    subject = subject_tmpl.format(
+    subject = _safe_format(subject_tmpl,
         giver_name=giver["name"], giver_email=giver["email"],
         receiver_name=receiver["name"], receiver_email=receiver["email"]
     )
-    body = body_tmpl.format(
+    body = _safe_format(body_tmpl,
         giver_name=giver["name"], giver_email=giver["email"],
         receiver_name=receiver["name"], receiver_email=receiver["email"]
     )
+
+    # sanitize headers to avoid CR/LF injection
+    subject = _sanitize_header(subject)[:998]  # keep subject reasonable length
+    from_addr = _sanitize_header(organizer_email)
+    to_addr = _sanitize_header(giver["email"])
+
+    if not _is_valid_email(from_addr):
+        raise ValueError("Invalid From email address")
+    if not _is_valid_email(to_addr):
+        raise ValueError(f"Invalid recipient email: {to_addr}")
+
     msg["Subject"] = subject
-    msg["From"] = organizer_email
-    msg["To"] = giver["email"]
+    msg["From"] = from_addr
+    msg["To"] = to_addr
     msg.set_content(body)
     return msg
 
@@ -184,11 +204,46 @@ def send_emails(
 def to_csv_bytes(rows: List[Dict[str, str]]) -> bytes:
     if not rows:
         return b""
+    # sanitize/escape formula cells
+    sanitized_rows = []
+    keys = list(rows[0].keys())
+    for r in rows:
+        sanitized_rows.append({k: _escape_csv_cell(str(r.get(k, "") or "")) for k in keys})
     buf = io.StringIO()
-    writer = csv.DictWriter(buf, fieldnames=list(rows[0].keys()))
+    writer = csv.DictWriter(buf, fieldnames=keys)
     writer.writeheader()
-    writer.writerows(rows)
+    writer.writerows(sanitized_rows)
     return buf.getvalue().encode("utf-8")
+
+def _sanitize_header(value: str) -> str:
+    if value is None:
+        return ""
+    # Remove CR/LF to prevent header injection
+    return value.replace("\r", " ").replace("\n", " ").strip()
+
+def _is_valid_email(addr: str) -> bool:
+    # basic validation: parsed address has a local@domain form
+    name, email = parseaddr(addr or "")
+    return "@" in email and "." in email
+
+class _SafeDict(dict):
+    def __missing__(self, key):
+        # leave unknown placeholders unchanged to avoid KeyError
+        return "{" + key + "}"
+
+def _safe_format(tmpl: str, **kwargs) -> str:
+    try:
+        return tmpl.format_map(_SafeDict(**{k: (v or "") for k, v in kwargs.items()}))
+    except Exception:
+        # fallback: return tmpl with placeholders unchanged
+        return tmpl
+
+def _escape_csv_cell(s: str) -> str:
+    if not s:
+        return s or ""
+    if s[0] in ("=", "+", "-", "@"):
+        return "'" + s
+    return s
 
 # ---------- UI ----------
 st.title("Secret Santa Matcher 🎁")
