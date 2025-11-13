@@ -65,7 +65,7 @@ services:
    - Download sample files from this repo or from the app itself
 2. Optionally upload:
    - Last matches CSV: `giver_email,receiver_email` (sample available in the app)
-   - Forbidden pairs CSV: `giver_email,receiver_email`(sample available in the app)
+   - Forbidden pairs CSV: `giver_email,receiver_email` (sample available in the app)
 3. Keep “Debug mode” ON to verify matches without sending emails.
 4. When ready to send emails:
    - Fill SMTP settings (see tips below)
