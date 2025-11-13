@@ -102,7 +102,6 @@ bob@example.com,alice@example.com
 
 ## Security notes
 
-- Never commit passwords or tokens to the repository.
 - Use provider-specific App Passwords where possible (e.g., Gmail).
 
 ## License
