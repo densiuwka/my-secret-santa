@@ -42,8 +42,24 @@ Dev-friendly hot-reload with Docker Compose:
 docker compose up --build
 ```
 
+## Installation (Docker Compose)
+Example docker-compose.yaml file:
+```yaml
+---
+services:
+  secret-santa:
+    image: ghcr.io/densiuwka/my-secret-santa:latest
+    container_name: secret-santa
+    ports:
+      - "8501:8501"
+    environment:
+      - STREAMLIT_SERVER_HEADLESS=true
+    restart: unless-stopped
+```
+
 ## Using the app
 
+0. Go to my-ip:8501/
 1. Prepare a CSV of participants with headers `name,email`.
 2. Optionally upload:
    - Last matches CSV: `giver_email,receiver_email`
