@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+.env
+venv/
+.venv/
+.git
+.gitignore
+Dockerfile
+docker-compose.yaml
+.streamlit/

@@ -1,0 +1,12 @@
+version: "3.9"
+services:
+  app:
+    container_name: my_secret_santa
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - STREAMLIT_SERVER_HEADLESS=true
+    volumes:
+      - .:/app
+    command: streamlit run secret_santa.py --server.port=8501 --server.address=0.0.0.0

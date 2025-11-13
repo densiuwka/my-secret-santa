@@ -1,0 +1,5 @@
+giver_email,receiver_email
+alice@example.com,bob@example.com
+bob@example.com,carol@example.com
+carol@example.com,dave@example.com
+dave@example.com,alice@example.com
