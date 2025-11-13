@@ -61,8 +61,8 @@ services:
 
 0. Go to http://MY_IP:8501/ - replace with IP of your machine.
 1. Prepare a CSV of participants with headers `name,email`.
-   a. Create the files yourself or
-   b. Download sample files from this repo or from the app itself
+   - Create the files yourself or
+   - Download sample files from this repo or from the app itself
 2. Optionally upload:
    - Last matches CSV: `giver_email,receiver_email` (sample available in the app)
    - Forbidden pairs CSV: `giver_email,receiver_email`(sample available in the app)
